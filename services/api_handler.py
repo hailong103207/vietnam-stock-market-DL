@@ -34,17 +34,15 @@ class APIHandler:
 
     def fetch_history(
         self,
-        from_date: pd.Timestamp,
-        to_date: pd.Timestamp,
+        from_ts: int,
+        to_ts: int,
         ticker: str,
         resolution: str
     ) -> Optional[Dict[str, Any]]:
         """
         Lấy dữ liệu lịch sử của cổ phiếu từ Vietstock API.
         """
-        from_ts = int(from_date.timestamp())
-        to_ts = int(to_date.timestamp())
-
+        
         params = {
             "symbol": ticker,
             "resolution": resolution,
