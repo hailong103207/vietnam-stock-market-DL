@@ -30,12 +30,13 @@ class TechAnalyser(BaseAnalyser):
     Indicators: sma, ema, rsi, macd, atr, bollinger bands, obv, vwap, cci, mfi, schotastic oscillator, adx, fibonaci retracement
     '''
 
-    def __init__(self, path: str = "data/json/cache.json"):
+    def __init__(self, path: str = "data/json/cache.json", csv_path: str = "data/csv/cache.csv"):
         self.df = pd.DataFrame()
         self.data_preprocess(path)
         self.col_by_str = {
             "SMA": self.add_sma,
             "EMA": self.add_ema,
+            "RSI": self.add_rsi,
             "MACD": self.add_macd,
             "ATR": self.add_atr,
             "BOL": self.add_bollinger_bands,
@@ -54,8 +55,8 @@ class TechAnalyser(BaseAnalyser):
         json_path = root / relative_path
         with open(json_path, "r", encoding="utf-8") as f:
             return json.load(f)
-        
-    
+
+
     def data_preprocess(self, path):
         json_path = root / path 
         #take data from json file
@@ -203,7 +204,7 @@ class TechAnalyser(BaseAnalyser):
 
         self.df['chikou_span'] = self.df['close'].shift(-displacement)
 
-    def add_col_by_config(self, indicator: str):
+    def add_col_by_str(self, indicator: str):
         indicator = indicator.upper()
         if "_" in indicator:
             func = indicator.split("_")[0]
@@ -218,9 +219,13 @@ class TechAnalyser(BaseAnalyser):
             else:
                 print(f"Indicator {indicator} not recognized.")
 
+    def add_col_by_list(self, indicators: list):
+        for indicator in indicators:
+            self.add_col_by_str(indicator)
+
 if __name__ == "__main__":
     analyser = TechAnalyser()
-    analyser.add_col_by_config("sma_5")
+    analyser.add_col_by_str("sma_5")
     print(analyser.df)
 
 
