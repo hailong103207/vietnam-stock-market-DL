@@ -1,2 +1,1 @@
-from .api_handler import APIHandler
-from .tech_analyser import TechAnalyser
+from . import api_handler, tech_analyser

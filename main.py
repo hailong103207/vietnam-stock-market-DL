@@ -3,6 +3,7 @@ from services.api_handler import APIHandler
 from utils.formatter import Formatter
 import sys
 import argparse
+import yaml
 
 '''Test API methods'''
 def test_api_handler_realtime():
@@ -12,7 +13,7 @@ def test_api_handler_realtime():
     handler = APIHandler()
     handler.fetch_realtime_data(resolution, range, ticker)
 
-def test_api_handler_eod():
+def test_api_handler_eod(args):
     handler = APIHandler()
     formatter = Formatter()
     resoluton = "1D"
@@ -49,4 +50,6 @@ if __name__ == "__main__":
         print(f"Invalid task '{args.task}'")
         print("Available tasks:", ", ".join(tasks.keys()))
         sys.exit(1)
-    tasks[args.task](args)
+    dict_args = vars(args)
+    print(dict_args)
+    tasks[args.task](dict_args)

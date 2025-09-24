@@ -3,3 +3,4 @@ data/
 .gitignore
 __pycache__/
 .env
+tradebot/
