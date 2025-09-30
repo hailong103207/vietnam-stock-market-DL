@@ -13,7 +13,8 @@ Output:
 - %sma5 trong t+8
 Model:
 LSTM(input_size=7, hidden_size=32, num_layers=1, bias=True, batch_first=False, dropout=0, bidirectional=False)
-ReLU(hidden_size, 16)
+Linear(hidden_size, 16)
+ReLU()
 dropout(0.05)
 Linear(16, 1)
 '''
@@ -21,5 +22,28 @@ Linear(16, 1)
 class SimpleLSTM(nn.Module, ModelStructure):
     def __init__(self):
         super(SimpleLSTM, self).__init__()
+        # Load configuration from YAML file
         self.config = load_config("simple_lstm")
-        self.model
+        self.input_size = self.config["input_size"]
+        self.hidden_size = self.config["hidden_size"]
+        self.num_layers = self.config["num_layers"]
+        self.dropout = self.config["dropout"]
+        self.bias = self.config["bias"]
+        self.batch_first = self.config["batch_first"]
+        self.bidirectional = self.config["bidirectional"]
+    
+        self.lstm = nn.LSTM(input_size=self.input_size,
+                            hidden_size=self.hidden_size,
+                            num_layers=self.num_layers,
+                            bias=self.bias,
+                            batch_first=self.batch_first,
+                            dropout=self.dropout,
+                            bidirectional=self.bidirectional)
+        self.linear1 = nn.Linear(self.hidden_size, 16)
+        self.relu = nn.ReLU()
+        self.dropout1 = nn.Dropout(0.05)
+        self.out = nn.Linear(16, 1)
+
+    def forward(self, x):
+        
+
