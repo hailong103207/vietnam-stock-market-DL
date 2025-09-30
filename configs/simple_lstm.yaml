@@ -1,0 +1,18 @@
+model_name : "simple_lstm_1"
+
+dataset:
+  input_features : ["%open", "%high", "%low", "%close", "%volume", "sma5", "volume"]
+  output_features : ["%sma5"]
+  sequence_length : 20
+  timesteps : 8
+
+
+LSTM:
+  input_size : 7
+  hidden_size : 32
+  output_size : 1
+  num_layers : 1
+  bias : True
+  batch_first : False
+  dropout : 0.0
+  bidirectional : False

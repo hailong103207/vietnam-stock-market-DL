@@ -25,13 +25,13 @@ fetch_range:
   tickers: []
   date_format: "%d-%m-%Y"
 '''
-def api_fetch_eod(args):
+def fetch_history(args):
     df_all = pd.DataFrame()
     config = load_config(args)
     eod_config = config["fetch_range"]
     handler = APIHandler()
     formatter = Formatter()
-    resoluton = "1D"
+    resoluton = eod_config["resolution"]
     from_ts = formatter.to_timestamp(eod_config['start_date'], eod_config['date_format'])
     to_ts = formatter.to_timestamp(eod_config['end_date'], eod_config['date_format'])
     tickers = eod_config['tickers']
@@ -47,7 +47,7 @@ def api_fetch_eod(args):
 '''Test API methods'''
 
 def test_api_handler_realtime():
-    resolution = "10"
+    resolution = "10"   
     range = pd.Timedelta(2, "d")
     ticker = "VIC"
     handler = APIHandler()
@@ -66,8 +66,8 @@ def test_api_handler_eod(args):
 
 if __name__ == "__main__":
     tasks = {
-        "test_eod": test_api_handler_eod,
-        "fetch_eod": api_fetch_eod,
+        "test_eod": test_api_handler_eod,           
+        "fetch_history": fetch_history,
     }
     parser = argparse.ArgumentParser(description="Run specific tasks with settings, other configs are loaded from /configs/")
     parser.add_argument(
