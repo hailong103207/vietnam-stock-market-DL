@@ -31,7 +31,8 @@ class SimpleLSTM(nn.Module, ModelStructure):
         self.bias = self.config["bias"]
         self.batch_first = self.config["batch_first"]
         self.bidirectional = self.config["bidirectional"]
-    
+        self.device = self.config["device"]
+
         self.lstm = nn.LSTM(input_size=self.input_size,
                             hidden_size=self.hidden_size,
                             num_layers=self.num_layers,
@@ -39,11 +40,21 @@ class SimpleLSTM(nn.Module, ModelStructure):
                             batch_first=self.batch_first,
                             dropout=self.dropout,
                             bidirectional=self.bidirectional)
-        self.linear1 = nn.Linear(self.hidden_size, 16)
+        self.fc1 = nn.Linear(self.hidden_size, 16)
+        self.dp1 = nn.Dropout(0.05)
+        self.fc2 = nn.Linear(16, 1)
         self.relu = nn.ReLU()
-        self.dropout1 = nn.Dropout(0.05)
-        self.out = nn.Linear(16, 1)
 
     def forward(self, x):
-        
+        #init cell state
+        h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(self.device)
+        c0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(self.device)
+        # Forward propagate LSTM
+        out, _ = self.lstm(x, (h0, c0))  # out: tensor of shape (batch_size, seq_length, hidden_size)
+        # Decode the hidden state of the last time step
+        out = self.fc1(out[:, -1, :])
+        out = self.dp1(out)
+        out = self.relu(out)
+        out = self.fc2(out)
+        return out
 

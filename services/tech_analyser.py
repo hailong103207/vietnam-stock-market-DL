@@ -50,6 +50,30 @@ class TechAnalyser(BaseAnalyser):
             "ICHI": self.add_ichimoku_cloud
         }
 
+    def __init__(self, df: pd.DataFrame):
+        self.col_by_str = {
+            "SMA": self.add_sma,
+            "EMA": self.add_ema,
+            "RSI": self.add_rsi,
+            "MACD": self.add_macd,
+            "ATR": self.add_atr,
+            "BOL": self.add_bollinger_bands,
+            "OBV": self.add_obv,
+            "VWAP": self.add_vwap,
+            "CCI": self.add_cci,
+            "MFI": self.add_mfi,
+            "STO": self.add_stochastic_oscillator,
+            "ADX": self.add_adx,
+            "FIB": self.add_fibonacci_retracement,
+            "ICHI": self.add_ichimoku_cloud,
+            "%SMA": self.add_percent_sma,
+            "%CLOSE": self.add_percent_close,
+            "%VOLUME": self.add_percent_volume,
+            "%HIGH": self.add_percent_high,
+            "%LOW": self.add_percent_low,
+            "%OPEN": self.add_percent_open
+        }
+
     def load_json(self, relative_path: str) -> dict:
         """Đọc file JSON và trả về dict"""
         json_path = root / relative_path
@@ -75,11 +99,36 @@ class TechAnalyser(BaseAnalyser):
         self.df["close"] =  data["c"]
         self.df["volume"] =  data["v"]    
 
+    def add_percent_sma(self, period: int):
+        # Calculate change rate of SMA line compared to previous value (sma column already exists)
+        self.df[f'%sma_{period}'] = self.df[f'sma_{period}'].pct_change()
+
+    def add_percent_close(self):
+        # Calculate change rate of close price compared to previous value
+        self.df[f"%close"] = self.df["close"].pct_change()
+    
+    def add_percent_volume(self):
+        # Calculate change rate of volume compared to previous value
+        self.df["%volume"] = self.df["volume"].pct_change()
+    
+    def add_percent_high(self):
+        # Calculate change rate of high price compared to previous value
+        self.df[f"%high"] = self.df["high"].pct_change()
+    
+    def add_percent_low(self):
+        # Calculate change rate of low price compared to previous value
+        self.df[f"%low"] = self.df["low"].pct_change()
+
+    def add_percent_open(self):
+        # Calculate change rate of open price compared to previous value
+        self.df[f"%open"] = self.df["open"].pct_change()
+
+
     def add_sma(self, period: int):
-        self.df[f'sma_{period}'] = self.df['close'].rolling(window=period).mean()
+        self.df[f"sma_{period}"] = self.df["close"].rolling(window=period).mean()
     
     def add_ema(self, period: int):
-        self.df[f'ema_{period}'] = self.df['close'].ewm(span=period, adjust=False).mean()
+        self.df[f"ema_{period}"] = self.df["close"].ewm(span=period, adjust=False).mean()
     
     def add_rsi(self, period: int = 14):
         delta = self.df['close'].diff()

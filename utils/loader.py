@@ -13,3 +13,8 @@ def load_config(model_name : str):
     with open(config_path[model_name], "r") as file:
         config_raw = yaml.safe_load(file)
     return config_raw
+
+def load_dataset(path: str):
+    import pandas as pd
+    df = pd.read_csv(path)
+    return df
