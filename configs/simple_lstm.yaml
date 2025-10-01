@@ -1,5 +1,9 @@
 model_name : "simple_lstm_1"
 device : "cuda"
+cache_dir : "data/torch/cache/train/simple_lstm/"
+
+cache:
+  use_cache : True
 
 dataset:
   input_features : ["%open", "%high", "%low", "%close", "%volume", "sma_5", "volume"]
@@ -8,9 +12,9 @@ dataset:
   timesteps : 8
   train_split : 0.7
   dataset_path : "data/csv/eod/raw/vnindex_raw_trainset_01-01-2016_31-12-2023.csv"
-  max_row : 10000
+  max_row : 700000
 
-LSTM:
+lstm:
   input_size : 7
   hidden_size : 32
   output_size : 1
@@ -19,3 +23,9 @@ LSTM:
   batch_first : False
   dropout : 0.0
   bidirectional : False
+
+training:
+  batch_size : 16
+  num_epochs : 100
+  learning_rate : 0.001
+  optimizer : "adam"

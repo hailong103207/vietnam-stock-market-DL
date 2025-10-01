@@ -2,6 +2,8 @@
 Abstract bass for models
 '''
 from abc import ABC, abstractmethod
+import pandas as pd
+import numpy as np
 
 class ModelStructure(ABC):
     
@@ -9,7 +11,7 @@ class ModelStructure(ABC):
     def forward(self, x): pass
     
     @abstractmethod
-    def train(self, data_loader, epochs): pass
+    def trainn(self, train_loader, val_loader): pass
 
     @abstractmethod
     def save_model(self, save_path): pass

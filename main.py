@@ -3,10 +3,12 @@ from services.api_handler import APIHandler
 from services.tech_analyser import TechAnalyser
 from services.data_processor import TimeSeriesProcessor
 from utils.formatter import Formatter
+from models.simple_lstm import SimpleLSTM
 import sys
 import argparse
 from utils.loader import load_config
 from utils.saver import df_to_csv
+from torch.utils.data import DataLoader, TensorDataset
 
 '''Fetch data'''
 '''YAML FETCH_EOD STRUCTURE:
@@ -26,7 +28,7 @@ fetch_range:
   tickers: []
   date_format: "%d-%m-%Y"
 '''
-def fetch_history(args):
+def task_fetch_history(args):
     df_all = pd.DataFrame()
     config = load_config(args)
     eod_config = config["fetch_range"]
@@ -47,14 +49,14 @@ def fetch_history(args):
 
 '''Test methods'''
 
-def test_api_handler_realtime():
+def task_test_api_handler_realtime():
     resolution = "10"   
     range = pd.Timedelta(2, "d")
     ticker = "VIC"
     handler = APIHandler()
     handler.fetch_realtime_data(resolution, range, ticker)
 
-def test_api_handler_eod(args):
+def task_test_api_handler_eod(args):
     handler = APIHandler()
     formatter = Formatter()
     resoluton = "1D"
@@ -65,16 +67,30 @@ def test_api_handler_eod(args):
 
 def task_test_time_series(args):
     time_series_processor = TimeSeriesProcessor("simple_lstm")
-    X_train, X_test, y_train, y_test = time_series_processor.get_dataset()
+    X_train, y_train, X_test, y_test = time_series_processor.get_dataset()
+    model = SimpleLSTM()
     print("X_train shape:", X_train.shape)
     print("y_train shape:", y_train.shape)
+    print("X_test shape:", X_test.shape)
+    print("y_test shape:", y_test.shape)
+
+def task_test_train_simple_lstm(args):
+    time_series_processor = TimeSeriesProcessor("simple_lstm")
+    X_train, X_test, y_train, y_test = time_series_processor.get_dataset()
+    model = SimpleLSTM()
+    train_dataset = TensorDataset(X_train, y_train)
+    val_dataset = TensorDataset(X_test, y_test)
+    train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False)
+    model.trainn(train_loader, val_loader)
 '''Main'''
 
 if __name__ == "__main__":
     tasks = {
-        "test_eod": test_api_handler_eod,           
-        "fetch_history": fetch_history,
+        "test_eod": task_test_api_handler_eod,           
+        "fetch_history": task_fetch_history,
         "test_time_series": task_test_time_series,
+        "test_train_simple_lstm": task_test_train_simple_lstm
     }
     parser = argparse.ArgumentParser(description="Run specific tasks with settings, other configs are loaded from /configs/")
     parser.add_argument(
