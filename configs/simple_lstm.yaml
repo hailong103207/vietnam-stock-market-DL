@@ -3,12 +3,12 @@ device : "cuda"
 
 dataset:
   input_features : ["%open", "%high", "%low", "%close", "%volume", "sma_5", "volume"]
-  output_features : ["%sma_5"]
+  output_features : ["%sma_5_8"]
   sequence_length : 20
   timesteps : 8
   train_split : 0.7
   dataset_path : "data/csv/eod/raw/vnindex_raw_trainset_01-01-2016_31-12-2023.csv"
-
+  max_row : 10000
 
 LSTM:
   input_size : 7

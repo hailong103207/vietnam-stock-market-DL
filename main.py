@@ -1,6 +1,7 @@
 import pandas as pd
 from services.api_handler import APIHandler
 from services.tech_analyser import TechAnalyser
+from services.data_processor import TimeSeriesProcessor
 from utils.formatter import Formatter
 import sys
 import argparse
@@ -44,7 +45,7 @@ def fetch_history(args):
         df_all = pd.concat([df_all, tech_analyser.df], ignore_index=True)
     df_to_csv(df_all, eod_config["csv_directory"] + eod_config["csv_name"])
 
-'''Test API methods'''
+'''Test methods'''
 
 def test_api_handler_realtime():
     resolution = "10"   
@@ -62,12 +63,18 @@ def test_api_handler_eod(args):
     ticker = "HPG"
     handler.fetch_history(from_ts=from_ts, to_ts=to_ts, ticker=ticker, resolution=resoluton)
 
+def task_test_time_series(args):
+    time_series_processor = TimeSeriesProcessor("simple_lstm")
+    X_train, X_test, y_train, y_test = time_series_processor.get_dataset()
+    print("X_train shape:", X_train.shape)
+    print("y_train shape:", y_train.shape)
 '''Main'''
 
 if __name__ == "__main__":
     tasks = {
         "test_eod": test_api_handler_eod,           
         "fetch_history": fetch_history,
+        "test_time_series": task_test_time_series,
     }
     parser = argparse.ArgumentParser(description="Run specific tasks with settings, other configs are loaded from /configs/")
     parser.add_argument(

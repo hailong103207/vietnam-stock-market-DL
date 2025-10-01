@@ -51,6 +51,7 @@ class TechAnalyser(BaseAnalyser):
         }
 
     def __init__(self, df: pd.DataFrame):
+        self.df = df
         self.col_by_str = {
             "SMA": self.add_sma,
             "EMA": self.add_ema,
@@ -66,12 +67,12 @@ class TechAnalyser(BaseAnalyser):
             "ADX": self.add_adx,
             "FIB": self.add_fibonacci_retracement,
             "ICHI": self.add_ichimoku_cloud,
-            "%SMA": self.add_percent_sma,
-            "%CLOSE": self.add_percent_close,
-            "%VOLUME": self.add_percent_volume,
-            "%HIGH": self.add_percent_high,
-            "%LOW": self.add_percent_low,
-            "%OPEN": self.add_percent_open
+            "%SMA": self.add_percent_change,
+            "%CLOSE": self.add_percent_change,
+            "%VOLUME": self.add_percent_change,
+            "%HIGH": self.add_percent_change,
+            "%LOW": self.add_percent_change,
+            "%OPEN": self.add_percent_change
         }
 
     def load_json(self, relative_path: str) -> dict:
@@ -99,29 +100,13 @@ class TechAnalyser(BaseAnalyser):
         self.df["close"] =  data["c"]
         self.df["volume"] =  data["v"]    
 
-    def add_percent_sma(self, period: int):
+    def add_percent_change(self, column: str = "close", period: int = 0, shift: int = 1):
         # Calculate change rate of SMA line compared to previous value (sma column already exists)
-        self.df[f'%sma_{period}'] = self.df[f'sma_{period}'].pct_change()
-
-    def add_percent_close(self):
-        # Calculate change rate of close price compared to previous value
-        self.df[f"%close"] = self.df["close"].pct_change()
-    
-    def add_percent_volume(self):
-        # Calculate change rate of volume compared to previous value
-        self.df["%volume"] = self.df["volume"].pct_change()
-    
-    def add_percent_high(self):
-        # Calculate change rate of high price compared to previous value
-        self.df[f"%high"] = self.df["high"].pct_change()
-    
-    def add_percent_low(self):
-        # Calculate change rate of low price compared to previous value
-        self.df[f"%low"] = self.df["low"].pct_change()
-
-    def add_percent_open(self):
-        # Calculate change rate of open price compared to previous value
-        self.df[f"%open"] = self.df["open"].pct_change()
+        print(f'Adding %{column}_{period}_{shift}...')
+        if(period == 0):
+            self.df[f'%{column}'] = self.df[f'{column}'].pct_change(periods=shift, fill_method=None)
+        else:
+            self.df[f'%{column}_{period}_{shift}'] = self.df[f'{column}_{period}'].pct_change(periods=shift, fill_method=None)
 
 
     def add_sma(self, period: int):
@@ -255,7 +240,25 @@ class TechAnalyser(BaseAnalyser):
 
     def add_col_by_str(self, indicator: str):
         indicator = indicator.upper()
-        if "_" in indicator:
+        if "%" in indicator:
+            if "_" in indicator:
+                func = indicator.split("_")[0]
+                col = func.replace("%", "")
+                col = col.lower()
+                arg = int(indicator.split("_")[1])
+                arg2 = int(indicator.split("_")[2])
+                if func in self.col_by_str:
+                    self.col_by_str[func](col, arg, arg2)
+                else:
+                    print(f"Indicator {indicator} not recognized.")
+            else:
+                func = indicator
+                col = func.replace("%", "").lower()
+                if func in self.col_by_str:
+                    self.col_by_str[func](col)
+                else:
+                    print(f"Indicator {indicator} not recognized.")
+        elif "_" in indicator:
             func = indicator.split("_")[0]
             arg = int(indicator.split("_")[1])
             if func in self.col_by_str:
