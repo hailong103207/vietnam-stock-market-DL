@@ -8,6 +8,7 @@ from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader, Dataset
 import torch
 import os
+from sklearn.preprocessing import MinMaxScaler
 
 class DataProcessor(ABC):
     @abstractmethod
@@ -130,6 +131,10 @@ class TimeSeriesProcessor(DataProcessor, Dataset):
             cnt_rows += df_ticker.shape[0]
         X = np.array(X)
         y = np.array(y)
+        X_scaler = MinMaxScaler(feature_range=(-1, 1))
+        y_scaler = MinMaxScaler(feature_range=(-1, 1))
+        X = X_scaler.fit_transform(X.reshape(-1,1))
+        y = y_scaler.fit_transform(y.reshape(-1,1))
         self.X_train, self.X_val, self.y_train, self.y_val = train_test_split(X, y, train_size=self.train_split, shuffle=False, random_state=42)
         print()
     
@@ -139,6 +144,7 @@ class TimeSeriesProcessor(DataProcessor, Dataset):
         self.y_train = torch.tensor(self.y_train[:, -1], dtype=torch.float32).to(self.device)
         self.X_val = torch.tensor(self.X_val, dtype=torch.float32).to(self.device)
         self.y_val = torch.tensor(self.y_val[:, -1], dtype=torch.float32).to(self.device)
+        
         # return self.X_train_tensor, self.y_train_tensor, self.X_val_tensor, self.y_val_tensor
 
     def get_dataset(self):

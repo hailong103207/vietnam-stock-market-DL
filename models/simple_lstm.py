@@ -43,6 +43,14 @@ class SimpleLSTM(nn.Module, ModelStructure):
         self.fc2 = nn.Linear(16, 1)
         self.relu = nn.ReLU()
 
+        self.to(self.device)
+        self.init_weights()
+
+
+    def init_weights(self):
+        for name, param in self.named_parameters():
+            nn.init.uniform_(param.data, -0.08, 0.08)
+
     def forward(self, x):
         #init cell state
         h0 = torch.zeros(self.lstm_config["num_layers"], x.size(1), self.lstm_config["hidden_size"]).to(self.device)
@@ -54,22 +62,25 @@ class SimpleLSTM(nn.Module, ModelStructure):
         out = self.dp1(out)
         out = self.relu(out)
         out = self.fc2(out)
-        return out
+        return out.to(self.device)
     
     def save_model(self, save_path):
         save_path = self.train_config["save_path"] if save_path is None else save_path
         torch.save(self.state_dict(), save_path)
     
     def trainn(self, train_loader, val_loader):
-        criterion = nn.MSELoss()
+        criterion = nn.MSELoss(reduction="sum")
         optimizer = torch.optim.Adam(self.parameters(), lr=self.train_config["learning_rate"])
         self.to(self.device)
         for epoch in range(self.train_config["num_epochs"]):
             self.train()
+
             train_losses = []
             for i, (inputs, targets) in enumerate(train_loader):
                 inputs = inputs.to(self.device)
                 targets = targets.to(self.device)
+                # check if different inputs shape and targets shape
+
                 # Forward pass
                 outputs = self.forward(inputs)
                 loss = criterion(outputs, targets)
@@ -77,6 +88,12 @@ class SimpleLSTM(nn.Module, ModelStructure):
                 # Backward and optimize
                 optimizer.zero_grad()
                 loss.backward()
+                torch.nn.utils.clip_grad_norm_(self.parameters(), max_norm=1)  # Gradient clipping
+                # check nan grad
+                for name, param in self.named_parameters():
+                    if param.grad is not None and torch.isnan(param.grad).any():
+                        print(f'NaN gradient detected in {name} on epoch {epoch+1}, batch {i+1}')
+                        break
                 optimizer.step()
             avg_train_loss = np.mean(train_losses)
 
