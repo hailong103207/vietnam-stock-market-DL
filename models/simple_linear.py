@@ -6,50 +6,29 @@ from .model_structure import ModelStructure
 from utils.loader import load_config
 import yaml
 
-'''
-Config: configs/simple_lstm.yaml
-Model:
-LSTM(input_size=7, hidden_size=32, num_layers=1, bias=True, batch_first=False, dropout=0, bidirectional=False)
-Linear(hidden_size, 1)
-'''
 
-class SimpleLSTM(nn.Module, ModelStructure):
+class SimpleLinear(nn.Module, ModelStructure):
     def __init__(self):
-        super(SimpleLSTM, self).__init__()
-        self.config = load_config("simple_lstm")
-        self.model_config = self.config["model"]
+        super(SimpleLinear, self).__init__()
+
         # Load configuration from YAML file
+        self.config = load_config("simple_linear")
+        self.model_config = self.config["model"]
+        self.train_config = self.config["training"]
+        self.device = self.config["device"]
+        self.to(self.device)
+        self.fc1 = nn.Linear(self.model_config["input_size"], 16)
+        self.init_weights()
 
-    def init_configs(self):
-        self.input_features = self.model_config["input_features"]
-        self.hidden_size = self.model_config["hidden_size"]
-        self.num_layers = self.model_config["num_layers"]
-        self.bias = self.model_config["bias"]
-        self.batch_first = self.model_config["batch_first"]
-        self.dropout = self.model_config["dropout"]
-
-    def init_layers(self):
-        self.lstm = nn.LSTM(
-            input_size=self.input_features,
-            hidden_size=self.hidden_size,
-            num_layers=self.num_layers,
-            bias=self.bias,
-            batch_first=self.batch_first,
-            dropout=self.dropout
-        )
-        self.fc1 = nn.Linear(self.hidden_size, 1)
 
     def init_weights(self):
         for name, param in self.named_parameters():
             nn.init.uniform_(param.data, -0.08, 0.08)
 
     def forward(self, x):
-        hidden_states = torch.zeros(self.num_layers, x.size(0), self.hidden_size)
-        cell_states = torch.zeros(self.num_layers, x.size(0), self.hidden_size)
-        out, (h0, c0) = self.lstm(x, (hidden_states, cell_states))
-        print(out.shape)
-        print(h0.shape)
-        print(c0.shape)
+        out = self.fc1(x)
+        return out.to(self.device)
+    
     def save_model(self, save_path):
         save_path = self.train_config["save_path"] if save_path is None else save_path
         torch.save(self.state_dict(), save_path)
@@ -62,13 +41,9 @@ class SimpleLSTM(nn.Module, ModelStructure):
             self.train()
 
             train_losses = []
-            #print batch size
-            print(f'Epoch {epoch+1}, Batch size: {train_loader.batch_size}')
             for i, (inputs, targets) in enumerate(train_loader):
                 inputs = inputs.to(self.device)
                 targets = targets.to(self.device)
-                # check if different inputs shape and targets shape
-
                 # Forward pass
                 outputs = self.forward(inputs)
                 loss = criterion(outputs, targets)
@@ -76,12 +51,6 @@ class SimpleLSTM(nn.Module, ModelStructure):
                 # Backward and optimize
                 optimizer.zero_grad()
                 loss.backward()
-                torch.nn.utils.clip_grad_norm_(self.parameters(), max_norm=1)  # Gradient clipping
-                # check nan grad
-                for name, param in self.named_parameters():
-                    if param.grad is not None and torch.isnan(param.grad).any():
-                        print(f'NaN gradient detected in {name} on epoch {epoch+1}, batch {i+1}')
-                        break
                 optimizer.step()
             avg_train_loss = np.mean(train_losses)
 

@@ -105,9 +105,13 @@ class TechAnalyser(BaseAnalyser):
         print(f'Adding %{column}_{period}_{shift}...')
         if(period == 0):
             self.df[f'%{column}'] = self.df[f'{column}'].pct_change(periods=shift, fill_method=None)
+
+
+
         else:
             self.df[f'%{column}_{period}_{shift}'] = self.df[f'{column}_{period}'].pct_change(periods=shift, fill_method=None)
-
+        self.df.replace(np.inf, 1, inplace=True)
+        self.df.replace(-np.inf, -1, inplace=True)
 
     def add_sma(self, period: int):
         self.df[f"sma_{period}"] = self.df["close"].rolling(window=period).mean()

@@ -6,22 +6,22 @@ cache:
   use_cache : True
 
 dataset:
-  input_features : ["%sma_5"]
-  output_features : ["%sma_5_2"]
-  sequence_length : 10
+  input_features : ["sma_5"]
+  output_features : ["sma_5"]
+  sequence_length : 20
   timesteps : 2
   train_split : 0.7
   dataset_path : "data/csv/eod/raw/vnindex_raw_trainset_01-01-2016_31-12-2023.csv"
-  max_row : 1000
+  max_row : 10000
 
 model:
   input_size : 1
-  hidden_size : 16
+  hidden_size : 32
   output_size : 1
   num_layers : 1
   bias : True
-  batch_first : True
-  dropout : 0.1
+  batch_first : False
+  dropout : 0.0
   bidirectional : False
 
 training:

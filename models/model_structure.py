@@ -11,7 +11,7 @@ class ModelStructure(ABC):
     def forward(self, x): pass
     
     @abstractmethod
-    def trainn(self, train_loader, val_loader): pass
+    def train_by_config(self, train_loader, val_loader): pass
 
     @abstractmethod
     def save_model(self, save_path): pass
