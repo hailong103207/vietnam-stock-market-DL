@@ -6,7 +6,7 @@ cache:
   use_cache : True
 
 dataset:
-  input_features : ["%sma_5"]
+  input_features : ["%sma_5_1"]
   output_features : ["%sma_5_2"]
   sequence_length : 10
   timesteps : 2

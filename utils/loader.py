@@ -20,7 +20,7 @@ def load_config(model_name : str):
     return config_raw
 
 def load_cache(path_dir : str):
-    if path_dir[-1] != "/" or path_dir[-1] != "\\":
+    if path_dir[-1] != "/":
         path_dir += "/"
     path = path_dir + "cache.yaml"
     try:

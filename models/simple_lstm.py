@@ -18,10 +18,13 @@ class SimpleLSTM(nn.Module, ModelStructure):
         super(SimpleLSTM, self).__init__()
         self.config = load_config("simple_lstm")
         self.model_config = self.config["model"]
+        self.init_configs()
+        self.init_layers()
+        self.init_weights()
         # Load configuration from YAML file
 
     def init_configs(self):
-        self.input_features = self.model_config["input_features"]
+        self.input_features = self.model_config["input_size"]
         self.hidden_size = self.model_config["hidden_size"]
         self.num_layers = self.model_config["num_layers"]
         self.bias = self.model_config["bias"]
@@ -50,11 +53,14 @@ class SimpleLSTM(nn.Module, ModelStructure):
         print(out.shape)
         print(h0.shape)
         print(c0.shape)
+        ans = self.fc1(out)
+        return ans
+
     def save_model(self, save_path):
         save_path = self.train_config["save_path"] if save_path is None else save_path
         torch.save(self.state_dict(), save_path)
     
-    def trainn(self, train_loader, val_loader):
+    def train_by_config(self, train_loader, val_loader):
         criterion = nn.MSELoss(reduction="sum")
         optimizer = torch.optim.Adam(self.parameters(), lr=self.train_config["learning_rate"])
         self.to(self.device)

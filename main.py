@@ -47,9 +47,8 @@ def task_fetch_history(args):
 
 '''Training'''
 def task_generate_time_series(args):
-    from models.simple_lstm import SimpleLSTM
     from services.data_processor import TimeSeriesProcessor
-    time_series_processor = TimeSeriesProcessor("simple_lstm")
+    TimeSeriesProcessor(args.model_name)
 
 '''Test methods'''
 
@@ -78,6 +77,14 @@ def task_test_train_simple_lstm(args):
     from models.simple_lstm import SimpleLSTM
     from torch.utils.data import DataLoader, TensorDataset
     from services.data_processor import TimeSeriesProcessor
+    model = SimpleLSTM()
+    timeseries = TimeSeriesProcessor("simple_lstm")
+    X_train, X_val, y_train, y_val = timeseries.get_dataset()
+    train_dataset = TensorDataset(X_train, y_train)
+    val_dataset = TensorDataset(X_val, y_val)
+    train_loader = DataLoader(train_dataset, batch_size=1, shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=1, shuffle=False)
+    print(model(X_train[0]))
 
 def task_test_train_simple_linear(args):
     # Create simple dataset y = x*2
@@ -104,15 +111,21 @@ if __name__ == "__main__":
     tasks = {
         "test_eod": task_test_api_handler_eod,           
         "fetch_history": task_fetch_history,
-        "test_time_series": task_test_time_series,
         "test_train_simple_lstm": task_test_train_simple_lstm,
-        "test_train_simple_linear": task_test_train_simple_linear
+        "test_train_simple_linear": task_test_train_simple_linear,
+        "generate_time_series" : task_generate_time_series
     }
     parser = argparse.ArgumentParser(description="Run specific tasks with settings, other configs are loaded from /configs/")
     parser.add_argument(
         "task",
         type=str,
         help=f"Task to run. Available tasks: {', '.join(tasks.keys())}"
+    )
+    parser.add_argument(
+        "--model-name",
+        type=str,
+        default="simple_lstm",
+        help="Model name for the task. Default: simple_lstm"
     )
     args = parser.parse_args()
     if args.task not in tasks:
