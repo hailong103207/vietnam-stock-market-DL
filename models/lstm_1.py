@@ -8,6 +8,8 @@ import yaml
 
 '''
 Config: configs/simple_lstm.yaml
+Input: [%open, %high, %low, %close, %volume, volume, sma_5]
+output: [%sma_5_8]
 Model:
 LSTM(input_size=7, hidden_size=32, num_layers=1, bias=True, batch_first=False, dropout=0, bidirectional=False)
 Linear(hidden_size, 1)

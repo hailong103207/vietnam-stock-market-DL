@@ -84,27 +84,8 @@ def task_test_train_simple_lstm(args):
     val_dataset = TensorDataset(X_val, y_val)
     train_loader = DataLoader(train_dataset, batch_size=1, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=1, shuffle=False)
-    print(model(X_train[0]))
+    model.train_by_config(train_loader, val_loader)
 
-def task_test_train_simple_linear(args):
-    # Create simple dataset y = x*2
-    from torch.utils.data import DataLoader, TensorDataset
-    import torch
-    from models.simple_linear import SimpleLinear
-    X = np.random.rand(1000, 1).astype(np.float32)
-    y = (X * 2).astype(np.float32)
-    X_train, X_test = X[:800], X[800:]
-    y_train, y_test = y[:800], y[800:]
-    X_train = torch.from_numpy(X_train)
-    y_train = torch.from_numpy(y_train)
-    X_test = torch.from_numpy(X_test)
-    y_test = torch.from_numpy(y_test)
-    model = SimpleLinear()
-    train_dataset = TensorDataset(X_train, y_train)
-    val_dataset = TensorDataset(X_test, y_test)
-    train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False)
-    model.trainn(train_loader, val_loader)
 '''Main'''
 
 if __name__ == "__main__":
@@ -112,7 +93,6 @@ if __name__ == "__main__":
         "test_eod": task_test_api_handler_eod,           
         "fetch_history": task_fetch_history,
         "test_train_simple_lstm": task_test_train_simple_lstm,
-        "test_train_simple_linear": task_test_train_simple_linear,
         "generate_time_series" : task_generate_time_series
     }
     parser = argparse.ArgumentParser(description="Run specific tasks with settings, other configs are loaded from /configs/")
