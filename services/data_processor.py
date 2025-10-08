@@ -9,16 +9,29 @@ from torch.utils.data import DataLoader, Dataset
 import torch
 import os
 from sklearn.preprocessing import MinMaxScaler
+import pickle
 
 class DataProcessor(ABC):
     @abstractmethod
     def load_data(self, path: str): pass
 
     @abstractmethod
+    def load_dataset(self): pass
+
+    @abstractmethod
+    def init_dataset_config(self): pass
+
+    @abstractmethod
     def transform_data(self): pass
 
     @abstractmethod
-    def fetch_dataset(self): pass
+    def prepare_dataset(self): pass
+
+    @abstractmethod
+    def normalize_dataset(self): pass
+
+    @abstractmethod
+    def save_dataset(self): pass
 
     @abstractmethod
     def get_dataset(self): pass
@@ -26,55 +39,51 @@ class DataProcessor(ABC):
 class TimeSeriesProcessor(DataProcessor, Dataset):
     def __init__(self, model_name : str):
         self.model_name_to_modify = {
-            "simple_lstm": self.modify_dataset_simple_lstm
+            "simple_lstm": self.modify_dataset_simple_lstm,
+            "lstm_1": self.modify_dataset_simple_lstm
         }
 
         self.config = load_config(model_name)
         self.X_train, self.X_val, self.y_train, self.y_val = None, None, None, None
         self.cache_dir = self.config["cache_dir"]
-        self.use_cache = self.config["cache"]["use_cache"]
         self.config_dataset = self.config["dataset"]
         self.config_dataset_cache = load_cache(self.cache_dir)
-        self.use_cache = (self.config_dataset == self.config_dataset_cache)
-        if self.use_cache:
-            print("Using cached dataset...")
-            self.X_train = torch.load(f"{self.cache_dir}/X_train.pt")
-            self.y_train = torch.load(f"{self.cache_dir}/y_train.pt")
-            self.X_val = torch.load(f"{self.cache_dir}/X_val.pt")
-            self.y_val = torch.load(f"{self.cache_dir}/y_val.pt")
-            print("Loaded dataset from cache.")
-            print()
+        if (self.config_dataset == self.config_dataset_cache):
+            self.load_dataset()
         else:
-            self.device = self.config["device"]
-            self.max_row = self.config_dataset["max_row"]
-            self.input_features = self.config_dataset["input_features"]
-            self.output_features = self.config_dataset["output_features"]
-            self.sequence_length = self.config_dataset["sequence_length"]
-            self.timesteps = self.config_dataset["timesteps"]
-            self.train_split = self.config_dataset["train_split"]
-            self.dataset_path = self.config_dataset["dataset_path"]
-            self.raw_df = self.load_data()
-            self.tickers = self.raw_df['ticker'].unique()
-            self.started_rows = None
-            self.ended_rows = None
-            self.modified_df = pd.DataFrame()
+            self.init_dataset_config()
             self.transform_data()
             #Final dataset
-            self.fetch_dataset()
+            self.prepare_dataset()
             self.model_name_to_modify[model_name]()
-            
+            self.normalize_dataset()
+            self.save_dataset()
             #Save to cache
-            print("Saving dataset to cache...")
-            os.makedirs(self.cache_dir, exist_ok=True)
 
-            torch.save(self.X_train, f"{self.cache_dir}/X_train.pt")
-            torch.save(self.y_train, f"{self.cache_dir}/y_train.pt")
-            torch.save(self.X_val, f"{self.cache_dir}/X_val.pt")
-            torch.save(self.y_val, f"{self.cache_dir}/y_val.pt")
-            save_cache(self.cache_dir, self.config_dataset)
-            print(f"Saved dataset to {self.cache_dir}")
 
-            print()
+    def load_dataset(self):
+        print("Using cached dataset...")
+        self.X_train = torch.load(f"{self.cache_dir}/X_train.pt")
+        self.y_train = torch.load(f"{self.cache_dir}/y_train.pt")
+        self.X_val = torch.load(f"{self.cache_dir}/X_val.pt")
+        self.y_val = torch.load(f"{self.cache_dir}/y_val.pt")
+        print("Loaded dataset from cache.")
+        print()
+    
+    def init_dataset_config(self):
+        self.device = self.config["device"]
+        self.max_row = self.config_dataset["max_row"]
+        self.input_features = self.config_dataset["input_features"]
+        self.output_features = self.config_dataset["output_features"]
+        self.sequence_length = self.config_dataset["sequence_length"]
+        self.timesteps = self.config_dataset["timesteps"]
+        self.train_split = self.config_dataset["train_split"]
+        self.dataset_path = self.config_dataset["dataset_path"]
+        self.raw_df = self.load_data()
+        self.tickers = self.raw_df['ticker'].unique()
+        self.started_rows = None
+        self.ended_rows = None
+        self.modified_df = pd.DataFrame()
 
     def time_series_generate(data:pd.DataFrame, sequence_length:int, timesteps:int, input_features:list, output_features:list):
         X, y = [], []
@@ -112,7 +121,7 @@ class TimeSeriesProcessor(DataProcessor, Dataset):
         self.started_rows = self.modified_df.groupby('ticker').head(1).index
         self.ended_rows = self.modified_df.groupby('ticker').tail(1).index
         print()
-    def fetch_dataset(self):
+    def prepare_dataset(self):
         print("Preparing dataset...")
         # print(self.modified_df)
         X = []
@@ -139,7 +148,52 @@ class TimeSeriesProcessor(DataProcessor, Dataset):
 
         self.X_train, self.X_val, self.y_train, self.y_val = train_test_split(X, y, train_size=self.train_split, shuffle=False, random_state=42)
         print()
-    
+    def save_dataset(self):
+        print("Saving dataset to cache...")
+        os.makedirs(self.cache_dir, exist_ok=True)
+
+        with open(f"{self.cache_dir}/X_scaler.pkl", "wb") as file:
+            pickle.dump(self.X_scaler, file)
+        with open(f"{self.cache_dir}/y_scaler.pkl", "wb") as file:
+            pickle.dump(self.y_scaler, file)
+
+        torch.save(self.X_train, f"{self.cache_dir}/X_train.pt")
+        torch.save(self.y_train, f"{self.cache_dir}/y_train.pt")
+        torch.save(self.X_val, f"{self.cache_dir}/X_val.pt")
+        torch.save(self.y_val, f"{self.cache_dir}/y_val.pt")
+        save_cache(self.cache_dir, self.config_dataset)
+        print(f"Saved dataset to {self.cache_dir}")
+
+        print()
+
+    def normalize_dataset(self):
+        self.X_scaler = MinMaxScaler(feature_range=(-1, 1), clip=True)
+        self.y_scaler = MinMaxScaler(feature_range=(-1, 1), clip=True)
+        np_X_train = self.X_train.cpu().numpy()
+        np_X_val = self.X_val.cpu().numpy()
+        np_y_train = self.y_train.cpu().numpy()
+        np_y_val = self.y_val.cpu().numpy()
+
+        np_X_train = np_X_train.reshape(-1, len(self.input_features))
+        np_X_val = np_X_val.reshape(-1, len(self.input_features))
+        np_y_train = np_y_train.reshape(-1, len(self.output_features))
+        np_y_val = np_y_val.reshape(-1, len(self.output_features))
+
+        np_X_train = self.X_scaler.fit_transform(np_X_train)
+        np_X_val = self.X_scaler.transform(np_X_val)
+        np_y_train = self.y_scaler.fit_transform(np_y_train)
+        np_y_val = self.y_scaler.transform(np_y_val)
+
+        np_X_train = np_X_train.reshape(self.X_train.shape)
+        np_X_val = np_X_val.reshape(self.X_val.shape)
+        np_y_train = np_y_train.reshape(self.y_train.shape)
+        np_y_val = np_y_val.reshape(self.y_val.shape)
+
+        self.X_train = torch.tensor(np_X_train, dtype=torch.float32).to(self.device)
+        self.X_val = torch.tensor(np_X_val, dtype=torch.float32).to(self.device)
+        self.y_train = torch.tensor(np_y_train, dtype=torch.float32).to(self.device)
+        self.y_val = torch.tensor(np_y_val, dtype=torch.float32).to(self.device)
+
     def modify_dataset_simple_lstm(self):
         #take last element of each sequence as label
         self.X_train = torch.tensor(self.X_train, dtype=torch.float32).to(self.device)

@@ -86,6 +86,18 @@ def task_test_train_simple_lstm(args):
     val_loader = DataLoader(val_dataset, batch_size=1, shuffle=False)
     model.train_by_config(train_loader, val_loader)
 
+def task_test_train_lstm_1(args):
+    from models.lstm_1 import LSTM_1
+    from torch.utils.data import DataLoader, TensorDataset
+    from services.data_processor import TimeSeriesProcessor
+    model = LSTM_1()
+    timeseries = TimeSeriesProcessor("lstm_1")
+    X_train, X_val, y_train, y_val = timeseries.get_dataset()
+    train_dataset = TensorDataset(X_train, y_train)
+    val_dataset = TensorDataset(X_val, y_val)
+    train_loader = DataLoader(train_dataset, batch_size=16, shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=16, shuffle=False)
+    model.train_by_config(train_loader, val_loader)
 '''Main'''
 
 if __name__ == "__main__":
@@ -93,6 +105,7 @@ if __name__ == "__main__":
         "test_eod": task_test_api_handler_eod,           
         "fetch_history": task_fetch_history,
         "test_train_simple_lstm": task_test_train_simple_lstm,
+        "test_train_lstm_1": task_test_train_lstm_1,
         "generate_time_series" : task_generate_time_series
     }
     parser = argparse.ArgumentParser(description="Run specific tasks with settings, other configs are loaded from /configs/")

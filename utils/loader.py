@@ -3,7 +3,8 @@ config_path = {
     "test_eod": "configs/fetch_history.yaml",
     "fetch_history": "configs/fetch_history.yaml",
     "simple_lstm": "configs/simple_lstm.yaml",
-    "simple_linear": "configs/simple_linear.yaml"
+    "simple_linear": "configs/simple_linear.yaml",
+    "lstm_1" : "configs/lstm_1.yaml"
 }
 def load_config(args):
     print(f"Loading config for {args.task}...")

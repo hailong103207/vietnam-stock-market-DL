@@ -15,10 +15,11 @@ LSTM(input_size=7, hidden_size=32, num_layers=1, bias=True, batch_first=False, d
 Linear(hidden_size, 1)
 '''
 
-class SimpleLSTM(nn.Module, ModelStructure):
+class LSTM_1(nn.Module, ModelStructure):
     def __init__(self):
-        super(SimpleLSTM, self).__init__()
-        self.config = load_config("simple_lstm")
+        super(LSTM_1, self).__init__()
+        self.config = load_config("lstm_1")
+        self.device = self.config["device"]
         self.init_model_configs()
         self.init_layers()
         self.init_weights()
@@ -28,13 +29,12 @@ class SimpleLSTM(nn.Module, ModelStructure):
 
     def init_model_configs(self):
         self.model_config = self.config["model"]
-        self.input_features = self.model_config["input_size"]
-        self.hidden_size = self.model_config["hidden_size"]
-        self.num_layers = self.model_config["num_layers"]
-        self.bias = self.model_config["bias"]
-        self.batch_first = self.model_config["batch_first"]
-        self.dropout = self.model_config["dropout"]
-        self.device = self.config["device"]
+        self.lstm = self.model_config["lstm"]
+        self.fc1 = self.model_config["fc1"]
+        self.dp1 = self.model_config["dp1"]
+        self.fc2 = self.model_config["fc2"]
+        self.dp2 = self.model_config["dp2"]
+        self.fc3 = self.model_config["fc3"]
 
     def init_train_configs(self):
         optim_dict = {
@@ -49,15 +49,20 @@ class SimpleLSTM(nn.Module, ModelStructure):
         self.loss_function = nn.MSELoss()
 
     def init_layers(self):
-        self.lstm = nn.LSTM(
-            input_size=self.input_features,
-            hidden_size=self.hidden_size,
-            num_layers=self.num_layers,
-            bias=self.bias,
-            batch_first=self.batch_first,
-            dropout=self.dropout
+        self.lstm_1 = nn.LSTM(
+            input_size=self.lstm["input_size"],
+            hidden_size=self.lstm["hidden_size"],
+            num_layers=self.lstm["num_layers"],
+            bias=self.lstm["bias"],
+            batch_first=self.lstm["batch_first"],
+            dropout=self.lstm["dropout"]
         )
-        self.fc1 = nn.Linear(self.hidden_size, 1)
+        self.fc_1 = nn.Linear(self.lstm["hidden_size"], self.fc1["output_size"])
+        self.dp_1 = nn.Dropout(self.dp1["dropout"])
+        self.fc_2 = nn.Linear(self.fc1["output_size"], self.fc2["output_size"])
+        self.dp_2 = nn.Dropout(self.dp2["dropout"])
+        self.fc_3 = nn.Linear(self.fc2["output_size"], self.fc3["output_size"])
+        self.relu = nn.ReLU()
 
     def init_weights(self):
         for name, param in self.named_parameters():
@@ -65,13 +70,20 @@ class SimpleLSTM(nn.Module, ModelStructure):
 
     def forward(self, x):
         x.to(self.device)
-        hidden_states = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(self.device)
-        cell_states = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(self.device)
-        out, (h0, c0) = self.lstm(x, (hidden_states, cell_states))
+        hidden_states = torch.zeros(self.lstm["num_layers"], x.size(0), self.lstm["hidden_size"]).to(self.device)
+        cell_states = torch.zeros(self.lstm["num_layers"], x.size(0), self.lstm["hidden_size"]).to(self.device)
+        out, (h0, c0) = self.lstm_1(x, (hidden_states, cell_states))
         # out: (batch_size, sequence_length, hidden_size)
         # c0, h0: (batch_size, 1, hidden_size)
-        ans = self.fc1(out[:,-1,:])
-        return ans
+        out = self.fc_1(out[:,-1,:])
+        out = self.relu(out)
+        out = self.dp_1(out)
+        out = self.fc_2(out)
+        out = self.relu(out)
+        out = self.dp_2(out)
+        out = self.fc_3(out)
+        
+        return out
 
     def save_model(self, save_path):
         save_path = self.train_config["save_path"] if save_path is None else save_path
@@ -84,6 +96,7 @@ class SimpleLSTM(nn.Module, ModelStructure):
         for batch_index, (x_batch, y_batch) in enumerate(self.train_loader):
             x_batch, y_batch = x_batch.to(self.device), y_batch.to(self.device)
             out_batch = self(x_batch)
+            # print(out_batch[0], y_batch[0])
             loss_batch = self.loss_function(out_batch, y_batch)
             running_loss += loss_batch
             self.optimizer.zero_grad()
