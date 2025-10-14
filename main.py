@@ -100,7 +100,10 @@ def task_test_train_lstm_1(args):
     model.train_by_config(train_loader, val_loader)
 '''Main'''
 
-if __name__ == "__main__":
+
+
+def main():
+
     tasks = {
         "test_eod": task_test_api_handler_eod,           
         "fetch_history": task_fetch_history,
@@ -126,3 +129,7 @@ if __name__ == "__main__":
         print("Available tasks:", ", ".join(tasks.keys()))
         sys.exit(1)
     tasks[args.task](args)
+
+
+if __name__ == "__main__":
+    main()
